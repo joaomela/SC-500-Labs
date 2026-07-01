@@ -1,138 +1,140 @@
 🔐 Lab: MFA & Phishing-Resistant Authentication — Microsoft Entra ID
 
 
-Série: AZ-500 / SC-500 Hands-on Labs
-Plataforma: Microsoft Entra ID
-Duração: ~20 minutos
-Nível: Intermédio
+Series: AZ-500 / SC-500 Hands-on Labs
+Platform: Microsoft Entra ID
+Duration: ~20 minutes
+Level: Intermediate
 
 
 
 
-📋 Visão Geral
+📋 Overview
 
-Este lab cobre a configuração completa de autenticação multifator no Microsoft Entra ID, desde o registo inicial de MFA até à implementação de autenticação phishing-resistant via Passkey (FIDO2). O objetivo é compreender a diferença entre "ter MFA" e "ter MFA verdadeiramente seguro".
-
-
-🎯 Objetivos
+This lab covers the full configuration of multifactor authentication in Microsoft Entra ID — from initial MFA registration all the way to phishing-resistant authentication via Passkey (FIDO2). The goal is to understand the practical difference between "having MFA enabled" and "having MFA that actually protects against modern attacks."
 
 
- Configurar uma MFA Registration Policy via Identity Protection
- Criar uma Conditional Access Policy para exigir MFA em portais cloud
- Criar uma Authentication Strength personalizada com MFA phishing-resistant
- Ativar e registar um Passkey (FIDO2) via Microsoft Authenticator
- Verificar login com autenticação phishing-resistant end-to-end
+🎯 Objectives
+
+
+ Configure an MFA Registration Policy via Identity Protection
+ Create a Conditional Access Policy requiring MFA for cloud admin portals
+ Build a custom Authentication Strength enforcing phishing-resistant MFA
+ Enable and register a Passkey (FIDO2) via Microsoft Authenticator
+ Verify end-to-end phishing-resistant login
 
 
 
-🧠 Conceitos-Chave
+🧠 Key Concepts
 
 MFA Registration Policy vs Conditional Access
 
-São duas coisas distintas e frequentemente confundidas:
+These are two distinct controls that are frequently confused:
 
-MFA Registration PolicyConditional AccessOnde viveIdentity ProtectionEntra ID > SecurityO que fazForça utilizadores a registar um método MFAExige o uso de MFA para aceder a recursosImpacto imediatoNenhum — utilizador ainda acede sem MFABloqueia acesso se MFA não for completadoQuando usarRollout gradual sem disrupçãoEnforcement ativo de políticas de segurança
+MFA Registration PolicyConditional AccessLocationIdentity ProtectionEntra ID → SecurityWhat it doesForces users to register an MFA methodRequires MFA to access a resourceImmediate impactNone — user still accesses without MFABlocks access if MFA is not completedUse caseGradual rollout with zero disruptionActive enforcement of security policies
 
-Authentication Strength — porquê personalizar?
+Why Create a Custom Authentication Strength?
 
-O Entra ID tem strengths pré-definidas ("Phishing-resistant MFA"), mas criar uma personalizada permite:
-
-
-Escolher exatamente quais métodos são aceites (ex: Passkey FIDO2 + Microsoft Authenticator, excluindo SMS)
-Adequar a requisitos regulatórios específicos (GDPR, DORA, NIS2)
-Aplicar controlos diferentes por aplicação ou grupo de risco
+Entra ID ships with built-in strengths (e.g. "Phishing-resistant MFA"), but building a custom one allows you to:
 
 
-Passkey (FIDO2) — o porquê
-
-MFA tradicional (SMS, TOTP) ainda é vulnerável a ataques Adversary-in-the-Middle (AiTM):
-
-[Utilizador] → [Site phishing (Evilginx)] → [Site real]
-                  ↑ interceta token MFA
-
-Um Passkey FIDO2 vincula a autenticação ao domínio legítimo criptograficamente. Um site falso nunca consegue completar o handshake — mesmo com a password roubada.
+Define exactly which methods are accepted (e.g. FIDO2 Passkey + Microsoft Authenticator, explicitly excluding SMS)
+Align with specific regulatory requirements (GDPR, DORA, NIS2)
+Apply different controls per application or user risk tier
 
 
-🔧 Tarefas Realizadas
+Passkey (FIDO2) — The Why
+
+Traditional MFA (SMS, TOTP) is still vulnerable to Adversary-in-the-Middle (AiTM) attacks:
+
+[User] → [Phishing proxy (e.g. Evilginx)] → [Legitimate site]
+                  ↑ intercepts MFA token in real time
+
+A FIDO2 Passkey cryptographically binds authentication to the legitimate domain. A fake site can never complete the WebAuthn handshake — even with the user's password in hand.
+
+MFA TypePhishing-resistant?AiTM-resistant?SMS OTP❌❌TOTP (Google/Microsoft Auth)❌❌Push notification❌❌Passkey (FIDO2)✅✅
+
+
+🔧 Tasks Completed
 
 Task 1 — MFA Registration Policy
 
-Caminho: Entra ID → Protection → Identity Protection → MFA Registration Policy
+Path: Entra ID → Protection → Identity Protection → MFA Registration Policy
 
 
-Configurado para utilizador de teste (Delia Dennis)
-Administradores excluídos via Exclude tab (break-glass account protection)
-Policy definida como Enabled
-Resultado: utilizador é forçado a registar o Microsoft Authenticator no próximo login, sem bloquear o acesso
+Scoped to test user (Delia Dennis) via Include: Select individuals and groups
+Administrator account excluded via Exclude tab (break-glass account protection)
+Policy set to Enabled
+Result: user is prompted to register Microsoft Authenticator on next login without being blocked from accessing resources
 
 
 Task 2 — Conditional Access: Require MFA for Admin Portals
 
-Caminho: Entra ID → Security → Conditional Access → + New policy
+Path: Entra ID → Security → Conditional Access → + New policy
 
-Nome:          Require MFA for portals
-Utilizadores:  Delia Dennis (incluída) | Administrator (excluído)
-Target:        Microsoft Admin Portals
-Grant:         Require multifactor authentication
-Estado:        On
+Name:           Require MFA for portals
+Users:          Delia Dennis (included) | Administrator (excluded)
+Target:         Microsoft Admin Portals
+Grant:          Require multifactor authentication
+Status:         On
 
-Verificação: Login no office.com não pede MFA. Login no entra.microsoft.com pede — Conditional Access aplicado por target resource, não por URL genérica.
-
-Task 3 — Phishing-Resistant MFA com Passkey (FIDO2)
-
-3.1 — Ativar o método:
-Entra ID → Authentication methods → Policies → Passkey (FIDO2) → Enable
-
-3.2 — Criar Authentication Strength personalizada:
-
-Nome:        SC500 phishing resistant MFA
-Métodos:     Passkeys (FIDO2) + Microsoft Authenticator
-
-3.3 — Atualizar Conditional Access policy:
+Verification:
 
 
-Grant: substituído Require MFA → Require authentication strength: SC500 phishing resistant MFA
+Login to office.com → no MFA prompt (not in scope)
+Login to entra.microsoft.com → MFA required (target resource matched)
 
 
-3.4 — Registar Passkey via Bluetooth:
+This confirms Conditional Access is enforcing per resource, not per URL pattern.
+
+Task 3 — Phishing-Resistant MFA with Passkey (FIDO2)
+
+3.1 — Enable the authentication method:
+Entra ID → Authentication methods → Policies → Passkey (FIDO2) → Enable → Save
+
+3.2 — Create a custom Authentication Strength:
+
+Name:         SC500 phishing resistant MFA
+Description:  Forces login with phishing-resistant MFA
+Methods:      Passkeys (FIDO2) + Microsoft Authenticator
+
+3.3 — Update the Conditional Access policy:
 
 
-Requer ligação Bluetooth entre PC e telemóvel (VMs não suportam)
-QR code gerado no portal → câmara do telemóvel → Passkey guardada no Microsoft Authenticator
+Grant: replace Require MFA → Require authentication strength
+Select: SC500 phishing resistant MFA
 
 
-3.5 — Login com Passkey:
+3.4 — Register Passkey via Bluetooth:
 
 
-Username → QR code no portal → câmara do telemóvel → biometria/PIN → autenticado
+Login as Delia Dennis → prompted to set up Passkey
+Select Other options → Having trouble? → Create your passkey a different way → iPhone/Android
+QR code generated on screen → scan with phone camera
+Bluetooth handshake between PC and phone → Passkey saved to Microsoft Authenticator
+
+
+3.5 — Login with Passkey:
+
+Username → QR code → phone camera → biometric/PIN → authenticated
+
+
+⚠️ Technical Notes
+
+
+VMs do not support Bluetooth — Passkey registration must be done on a physical PC browser, not inside a virtualized lab environment
+New Authentication Strengths may take a few minutes to appear in Conditional Access dropdowns — signing out and back in resolves this
+Always exclude administrator and break-glass accounts from restrictive MFA policies to prevent accidental tenant lockout
+The "Name your passkey" screen can hang in some lab environments — this is a lab artifact, not a production issue
 
 
 
-⚠️ Notas Técnicas
-
-
-VMs não suportam Bluetooth — o registo de Passkey tem de ser feito no browser do PC físico, não dentro do ambiente de lab virtualizado
-Authentication Strengths novas podem demorar alguns minutos a aparecer no dropdown do Conditional Access — fazer logout e re-login resolve
-Excluir sempre contas de administrador e break-glass das políticas MFA restritivas — evita lock-out acidental do tenant
-
-
-
-🔗 Referências
+🔗 References
 
 
 Microsoft Docs — MFA Registration Policy
-Microsoft Docs — Conditional Access
+Microsoft Docs — Conditional Access Overview
 Microsoft Docs — Authentication Strengths
 Microsoft Docs — FIDO2 Passkeys
 MITRE ATT&CK — T1111: MFA Interception
-
-
-
-🗺️ Próximos Labs
-
-
- Privileged Identity Management (PIM) — Just-in-Time access para roles Entra e Azure
- Conditional Access — Self-Service Password Reset em ambientes híbridos
- Securing AI agents e declarative agents com API plugins
-
-
+AiTM Phishing with Evilginx — Research Overview
